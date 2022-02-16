@@ -5,7 +5,7 @@ from binance import ThreadedWebsocketManager
 import config as Config
 import numpy
 import talib
-client = Client(Config.API_KEY, Config.API_SECRET)
+
 
 
 RSI_PERIOD = 14
@@ -13,6 +13,9 @@ RSI_OVERSOLD = 30
 RSI_OVERBOUGHT = 70
 BOUGHT = False
 SOLD = False
+
+client = Client(Config.API_KEY, Config.API_SECRET)
+
 def main():
     closes = []
     
