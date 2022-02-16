@@ -8,7 +8,7 @@ Make sure you have the following installed on your system
 - `git clone https://github.com/ndiecodes/binance-trading-bot.git bot`
 - `cd bot`
 - `cp config.example.py config.py` - then fill in your configurations.
-- `ip install -r requirements.txt`
+- `pip install -r requirements.txt`
 - `python main.py` - On a different terminal session or tab
 
 
