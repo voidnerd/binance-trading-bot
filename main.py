@@ -23,7 +23,7 @@ class Trade:
         self.bail_out_at = 0.2
         self.at_loss = False
         self.BOUGHT = False
-        self.SOLD = False
+        self.SOLD = True
 
     def get_first_set_of_closes(self) -> None:
         for kline in self.client.get_historical_klines(Config.TRADESYMBOL, Client.KLINE_INTERVAL_1MINUTE, "1 hour ago UTC"):
@@ -39,20 +39,26 @@ class Trade:
         balance = self.client.get_asset_balance(asset=asset)
         return balance
 
+    def buy(self):
+        self.client.order_market_buy(
+            symbol=Config.TRADESYMBOL,
+            quoteOrderQty=self.get_balance(Config.QUOTE_ASSET))
+
+    def sell(self):
+        self.client.order_market_sell(
+            symbol=Config.TRADESYMBOL,
+            quoteOrderQty=self.get_balance(Config.BASE_ASSET))
+
     def order(self, side: str) -> bool:
         try:
             if side == SIDE_BUY:
-                self.client.order_market_buy(
-                    symbol=Config.TRADESYMBOL,
-                    quoteOrderQty=self.get_balance(Config.QUOTE_ASSET))
+                self.buy()
                 self.buy_price = self.close
                 self.at_loss = False
                 self.BOUGHT = True
                 self.SOLD = False
             else:
-                self.client.order_market_sell(
-                    symbol=Config.TRADESYMBOL,
-                    quoteOrderQty=self.get_balance(Config.BASE_ASSET))
+                self.sell()
                 self.SOLD = True
                 self.BOUGHT = False
             self.previous_rsi = 0
@@ -64,12 +70,12 @@ class Trade:
     def should_buy(self) -> bool:
         if self.at_loss and self.last_rsi > Trade.RSI_OVERSOLD:
             return True
+        if self.previous_rsi != 0 and self.previous_rsi < self.last_rsi:
+            return True
         if(self.last_rsi < Trade.RSI_OVERSOLD and not self.BOUGHT):
             if self.previous_rsi == 0:
                 self.previous_rsi = self.last_rsi
                 return False
-            if self.previous_rsi > self.last_rsi:
-                return True
             else:
                 self.previous_rsi = self.last_rsi
                 return False
@@ -80,13 +86,12 @@ class Trade:
         if self.shouldStopLoss():
             self.at_loss = True
             return True
-
+        if self.previous_rsi != 0 and self.previous_rsi > self.last_rsi:
+            return True
         if(self.last_rsi >= Trade.RSI_OVERBOUGHT and not self.SOLD):
             if self.previous_rsi == 0:
                 self.previous_rsi = self.last_rsi
                 return False
-            if self.previous_rsi < self.last_rsi:
-                return True
             else:
                 self.previous_rsi = self.last_rsi
                 return False
@@ -95,27 +100,27 @@ class Trade:
 
     def shouldStopLoss(self) -> bool:
         stop_loss_price = self.buy_price - (self.buy_price * self.bail_out_at)
-        if(self.buy_price <= stop_loss_price):
+        if(self.close <= stop_loss_price):
             return True
         else:
             return False
 
     def buy_or_sell(self) -> None:
         if self.should_buy():
-            print("Placing buy order at: {}".format(self.close))
+            print("Placing buy order - price - {} - rsi - {}".format(self.close, self.last_rsi))
             self.order(SIDE_BUY)
         if self.should_sell():
-            print("Placing sell order at: {}".format(self.close))
+            print("Placing sell order - price -  {} - rsi - {}".format(self.close, self.last_rsi))
             self.order(SIDE_SELL)
-        print(self.last_rsi)
 
     def handle_socket_message(self, msg) -> None:
         candle = msg['k']
-        self.close = candle['c']
+        self.close = float(candle['c'])
         is_candle_closed = candle['x']
         if is_candle_closed:
-            self.closes.append(float(self.close))
+            self.closes.append(self.close)
             if len(self.closes) > 30:
+                # We done't want the arry to get too big for the RAM
                 self.closes.pop(0)
                 np_closes = numpy.array(self.closes)
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
@@ -131,4 +136,5 @@ client = Client(Config.API_KEY, Config.API_SECRET)
 
 trade = Trade(twm, client)
 
-trade.start()
+if __name__ == '__main__':
+    trade.start()
