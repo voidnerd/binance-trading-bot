@@ -147,6 +147,7 @@ class Trade:
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
                 self.buy_or_sell()
+                print("RSI - {}".format(self.last_rsi))
 
 
 # Start The Trade
