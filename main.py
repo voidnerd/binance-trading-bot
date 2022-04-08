@@ -107,10 +107,10 @@ class Trade:
 
     def buy_or_sell(self) -> None:
         if self.should_buy():
-            print("Placing buy order - price - {} - rsi - {}".format(self.close, self.last_rsi))
+            print("Placing buy order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             self.order(SIDE_BUY)
         if self.should_sell():
-            print("Placing sell order - price -  {} - rsi - {}".format(self.close, self.last_rsi))
+            print("Placing sell order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             self.order(SIDE_SELL)
 
     def handle_socket_message(self, msg) -> None:
