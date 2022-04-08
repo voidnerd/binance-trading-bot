@@ -2,6 +2,7 @@ from xmlrpc.client import Boolean
 from binance.client import Client
 from binance.enums import *
 from binance import ThreadedWebsocketManager
+from binance.helpers import round_step_size
 import config as Config
 import numpy
 import talib
@@ -24,6 +25,9 @@ class Trade:
         self.at_loss = False
         self.BOUGHT = False
         self.SOLD = True
+        self.minQty = 0
+        self.maxQty = 0
+        self.stepSize = 0
 
     def get_first_set_of_closes(self) -> None:
         for kline in self.client.get_historical_klines(Config.TRADESYMBOL, Client.KLINE_INTERVAL_1MINUTE, "1 hour ago UTC"):
@@ -35,19 +39,36 @@ class Trade:
         self.twm.start_kline_socket(callback=self.handle_socket_message,
                                     symbol=Config.TRADESYMBOL, interval=Client.KLINE_INTERVAL_1MINUTE)
 
+    def get_round_step_quantity(self, qty):
+        info = self.client.get_symbol_info(Config.TRADESYMBOL)
+        for x in info["filters"]:
+            if x["filterType"] == "LOT_SIZE":
+                self.minQty = float(x["minQty"])
+                self.maxQty = float(x["maxQty"])
+                self.stepSize= float(x["stepSize"])
+        if qty < self.minQty:
+            qty = self.minQty
+        return round_step_size(quantity=qty, step_size=self.stepSize)
+    
+    def get_quantity(self, asset):
+        balance = self.get_balance(asset=asset)
+        quantity = self.get_round_step_quantity(float(balance))
+        return quantity
+
+
     def get_balance(self, asset) -> str:
         balance = self.client.get_asset_balance(asset=asset)
-        return balance
+        return balance['free']
 
     def buy(self):
         self.client.order_market_buy(
             symbol=Config.TRADESYMBOL,
-            quoteOrderQty=self.get_balance(Config.QUOTE_ASSET))
+            quoteOrderQty=self.get_quantity(Config.QUOTE_ASSET))
 
     def sell(self):
         self.client.order_market_sell(
             symbol=Config.TRADESYMBOL,
-            quoteOrderQty=self.get_balance(Config.BASE_ASSET))
+            quantity=self.get_quantity(Config.BASE_ASSET))
 
     def order(self, side: str) -> bool:
         try:
@@ -125,6 +146,7 @@ class Trade:
                 np_closes = numpy.array(self.closes)
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
+                print(self.last_rsi)
                 self.buy_or_sell()
 
 
