@@ -84,7 +84,7 @@ class Trade:
                 self.BOUGHT = False
             self.previous_rsi = 0
         except Exception as e:
-            print("error placing order for {}".format(side))
+            print("Error placing order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             return False
         return True
 
@@ -146,7 +146,6 @@ class Trade:
                 np_closes = numpy.array(self.closes)
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
-                print(self.last_rsi)
                 self.buy_or_sell()
 
 

@@ -158,7 +158,7 @@ class TestUser(unittest.TestCase):
         trade.sell.assert_called_once()
         self.assertEqual(trade.buy.call_count, 2)
 
-        # it should sells
+        # it should sell
         trade.last_rsi = 79
         trade.buy_or_sell()
 
