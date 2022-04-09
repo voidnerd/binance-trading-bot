@@ -4,6 +4,7 @@ from binance.enums import *
 from binance import ThreadedWebsocketManager
 from binance.helpers import round_step_size
 import config as Config
+from datetime import datetime
 import numpy
 import talib
 
@@ -147,7 +148,7 @@ class Trade:
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
                 self.buy_or_sell()
-                print("RSI - {}".format(self.last_rsi))
+                print("RSI - {} -- TIME - {}".format(self.last_rsi, datetime.now().strftime('%H:%M:%S')))
 
 
 # Start The Trade
