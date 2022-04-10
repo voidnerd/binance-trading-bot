@@ -21,7 +21,7 @@ class Trade:
         self.buy_price = 0
         self.last_rsi = 0
         self.previous_rsi = 0
-        self.bail_out_at = 0.2
+        self.bail_out_at = 0.1
         self.at_loss = False
         self.BOUGHT = False
         self.SOLD = True
@@ -111,15 +111,8 @@ class Trade:
         if self.shouldStopLoss():
             self.at_loss = True
             return True
-        if self.previous_rsi != 0 and self.previous_rsi > self.last_rsi:
-            return True
         if(self.last_rsi >= Trade.RSI_OVERBOUGHT and not self.SOLD):
-            if self.previous_rsi == 0:
-                self.previous_rsi = self.last_rsi
-                return False
-            else:
-                self.previous_rsi = self.last_rsi
-                return False
+            return True
         else:
             return False
 

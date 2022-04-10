@@ -28,7 +28,7 @@ class TestUser(unittest.TestCase):
 
         self.assertTrue(trade.should_buy())
 
-    def test_sells_when_rsi_is_overbought_and_shows_downward_trend(self):
+    def test_sells_when_rsi_is_overbought(self):
         trade = Trade(twm, client)
         trade.SOLD = False
 
@@ -36,14 +36,6 @@ class TestUser(unittest.TestCase):
         trade.close = 35
 
         trade.last_rsi = 71
-
-        self.assertFalse(trade.should_sell())
-
-        trade.last_rsi = 75
-
-        self.assertFalse(trade.should_sell())
-
-        trade.last_rsi = 72
 
         self.assertTrue(trade.should_sell())
 
@@ -60,7 +52,7 @@ class TestUser(unittest.TestCase):
         trade = Trade(twm, client)
 
         trade.buy_price = 30
-        trade.close = 24
+        trade.close = 27
 
         self.assertTrue(trade.should_sell())
         self.assertTrue(trade.at_loss)
@@ -85,11 +77,6 @@ class TestUser(unittest.TestCase):
         self.assertEqual(trade.previous_rsi, 0)
 
         trade.last_rsi = 71
-        trade.buy_or_sell()
-
-        trade.sell.assert_not_called()
-
-        trade.last_rsi = 69
         trade.buy_or_sell()
 
         trade.sell.assert_called_once()
@@ -121,9 +108,6 @@ class TestUser(unittest.TestCase):
         trade.last_rsi = 79
         trade.buy_or_sell()
 
-        trade.last_rsi = 71
-        trade.buy_or_sell()
-
         trade.sell.assert_not_called()
 
         # Assert buy is first order
@@ -136,7 +120,7 @@ class TestUser(unittest.TestCase):
         trade.buy.assert_called_once()
         
         # Assert can bail out when it hits stop loss
-        trade.close = 24
+        trade.close = 27
         trade.buy_or_sell()
 
         trade.buy.assert_called_once()
@@ -160,9 +144,6 @@ class TestUser(unittest.TestCase):
 
         # it should sell
         trade.last_rsi = 79
-        trade.buy_or_sell()
-
-        trade.last_rsi = 71
         trade.buy_or_sell()
 
         self.assertEqual(trade.sell.call_count, 2)
