@@ -88,6 +88,7 @@ class Trade:
             self.previous_rsi = 0
         except Exception as e:
             print("Error placing order - price: {} - rsi: {}".format(self.close, self.last_rsi))
+            print(e)
             return False
         return True
 
