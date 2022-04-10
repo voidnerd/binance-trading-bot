@@ -1,8 +1,7 @@
-from xmlrpc.client import Boolean
+from decimal import Decimal
 from binance.client import Client
 from binance.enums import *
 from binance import ThreadedWebsocketManager
-from binance.helpers import round_step_size
 import config as Config
 from datetime import datetime
 import numpy
@@ -46,16 +45,19 @@ class Trade:
             if x["filterType"] == "LOT_SIZE":
                 self.minQty = float(x["minQty"])
                 self.maxQty = float(x["maxQty"])
-                self.stepSize= float(x["stepSize"])
+                self.stepSize= x["stepSize"]
         if qty < self.minQty:
             qty = self.minQty
-        return round_step_size(quantity=qty, step_size=self.stepSize)
+        return self.floor_step_size(qty)
     
     def get_quantity(self, asset):
         balance = self.get_balance(asset=asset)
         quantity = self.get_round_step_quantity(float(balance))
         return quantity
 
+    def floor_step_size(self, quantity):
+        step_size_dec = Decimal(str(self.stepSize))
+        return float(int(Decimal(str(quantity)) / step_size_dec) * step_size_dec)
 
     def get_balance(self, asset) -> str:
         balance = self.client.get_asset_balance(asset=asset)
