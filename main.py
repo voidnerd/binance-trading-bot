@@ -93,7 +93,7 @@ class Trade:
     def should_buy(self) -> bool:
         if self.at_loss and self.last_rsi > Trade.RSI_OVERSOLD:
             return True
-        if(self.last_rsi <= Trade.RSI_OVERSOLD and not self.BOUGHT):
+        if(self.last_rsi < Trade.RSI_OVERSOLD and not self.BOUGHT):
            return True
         else:
             return False
@@ -102,7 +102,7 @@ class Trade:
         if self.shouldStopLoss():
             self.at_loss = True
             return True
-        if(self.last_rsi >= Trade.RSI_OVERBOUGHT and not self.SOLD):
+        if(self.last_rsi > Trade.RSI_OVERBOUGHT and not self.SOLD):
             return True
         else:
             return False
