@@ -13,16 +13,8 @@ client = Client(Config.TESTNET_API_KEY, Config.TESTNET_API_SECRET, testnet=True)
 
 class TestUser(unittest.TestCase):
 
-    def test_buys_when_rsi_is_oversold_and_shows_upward_trend(self):
+    def test_buys_when_rsi_is_oversold(self):
         trade = Trade(twm, client)
-
-        trade.last_rsi = 29.5
-
-        self.assertFalse(trade.should_buy())
-
-        trade.last_rsi = 23
-
-        self.assertFalse(trade.should_buy())
 
         trade.last_rsi = 24
 
@@ -63,18 +55,12 @@ class TestUser(unittest.TestCase):
         trade.sell = MagicMock(return_value=None)
         trade.close = 24
 
-        trade.last_rsi = 29.5
-        trade.buy_or_sell()
-
-        trade.buy.assert_not_called()
-
         trade.last_rsi = 29.8
         trade.buy_or_sell()
 
         trade.buy.assert_called_once()
         self.assertTrue(trade.BOUGHT)
         self.assertFalse(trade.SOLD)
-        self.assertEqual(trade.previous_rsi, 0)
 
         trade.last_rsi = 71
         trade.buy_or_sell()
@@ -82,21 +68,6 @@ class TestUser(unittest.TestCase):
         trade.sell.assert_called_once()
         self.assertFalse(trade.BOUGHT)
         self.assertTrue(trade.SOLD)
-        self.assertEqual(trade.previous_rsi, 0)
-
-
-    def test_should_not_hit_buy_order_on_straight_downward_trend(self):
-        trade = Trade(twm, client)
-        trade.buy = MagicMock(return_value=None)
-        trade.close = 24
-
-        trade.last_rsi = 29.5
-        trade.buy_or_sell()
-
-        trade.last_rsi = 29.2
-        trade.buy_or_sell()
-
-        trade.buy.assert_not_called()
 
     def test_should_simulate_buy_or_sell_when_at_loss_properly(self):
         trade = Trade(twm, client)
@@ -111,10 +82,8 @@ class TestUser(unittest.TestCase):
         trade.sell.assert_not_called()
 
         # Assert buy is first order
-        trade.last_rsi = 29
-        trade.buy_or_sell()
 
-        trade.last_rsi = 31
+        trade.last_rsi = 29.5
         trade.buy_or_sell()
         
         trade.buy.assert_called_once()

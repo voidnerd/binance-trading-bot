@@ -20,7 +20,6 @@ class Trade:
         self.close = 0
         self.buy_price = 0
         self.last_rsi = 0
-        self.previous_rsi = 0
         self.bail_out_at = 0.1
         self.at_loss = False
         self.BOUGHT = False
@@ -85,7 +84,6 @@ class Trade:
                 self.sell()
                 self.SOLD = True
                 self.BOUGHT = False
-            self.previous_rsi = 0
         except Exception as e:
             print("Error placing order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             print(e)
@@ -95,15 +93,8 @@ class Trade:
     def should_buy(self) -> bool:
         if self.at_loss and self.last_rsi > Trade.RSI_OVERSOLD:
             return True
-        if self.previous_rsi != 0 and self.previous_rsi < self.last_rsi:
-            return True
-        if(self.last_rsi < Trade.RSI_OVERSOLD and not self.BOUGHT):
-            if self.previous_rsi == 0:
-                self.previous_rsi = self.last_rsi
-                return False
-            else:
-                self.previous_rsi = self.last_rsi
-                return False
+        if(self.last_rsi <= Trade.RSI_OVERSOLD and not self.BOUGHT):
+           return True
         else:
             return False
 
