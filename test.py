@@ -9,7 +9,9 @@ import config as Config
 twm = ThreadedWebsocketManager(
     api_key=Config.TESTNET_API_KEY, api_secret=Config.TESTNET_API_SECRET, testnet=True)
 
-client = Client(Config.TESTNET_API_KEY, Config.TESTNET_API_SECRET, testnet=True)
+client = Client(Config.TESTNET_API_KEY,
+                Config.TESTNET_API_SECRET, testnet=True)
+
 
 class TestUser(unittest.TestCase):
 
@@ -24,22 +26,22 @@ class TestUser(unittest.TestCase):
         trade = Trade(twm, client)
         trade.SOLD = False
 
-        trade.buy_price = 30 
+        trade.buy_price = 30
         trade.close = 35
 
         trade.last_rsi = 71
 
         self.assertTrue(trade.should_sell())
 
-    def test_it_should_buy_upward_trend_when_at_loss(self):
+    def test_it_should_stop_buy_when_at_loss(self):
         trade = Trade(twm, client)
 
         trade.at_loss = True
 
-        trade.last_rsi = 31
+        trade.last_rsi = 29
 
-        self.assertTrue(trade.should_buy())
-    
+        self.assertFalse(trade.should_buy())
+
     def test_it_should_sell_you_hit_stop_loss(self):
         trade = Trade(twm, client)
 
@@ -85,26 +87,35 @@ class TestUser(unittest.TestCase):
 
         trade.last_rsi = 29.5
         trade.buy_or_sell()
-        
+
         trade.buy.assert_called_once()
-        
+
         # Assert can bail out when it hits stop loss
-        trade.close = 27
+        trade.close = 28.5
         trade.buy_or_sell()
 
         trade.buy.assert_called_once()
         trade.sell.assert_called_once()
         self.assertTrue(trade.SOLD)
         self.assertFalse(trade.BOUGHT)
+        self.assertTrue(trade.at_loss)
+
+        # should do nothing
+        trade.last_rsi = 26
+        trade.buy_or_sell()
+        trade.buy.assert_called_once()
+        trade.sell.assert_called_once()
+        self.assertTrue(trade.at_loss)
 
         # it should buy again when market is promising
-        trade.last_rsi = 31
+        trade.last_rsi = 79
         trade.buy_or_sell()
 
-        trade.buy.assert_called()
-        self.assertEqual(trade.buy.call_count, 2)
+        # trade.buy.assert_called()
+        self.assertFalse(trade.at_loss)
+        self.assertEqual(trade.buy.call_count, 1)
 
-        # it should do nothing
+        # it should start buying again
         trade.last_rsi = 29
         trade.buy_or_sell()
 
@@ -112,12 +123,11 @@ class TestUser(unittest.TestCase):
         self.assertEqual(trade.buy.call_count, 2)
 
         # it should sell
-        trade.last_rsi = 79
+        trade.last_rsi = 72
         trade.buy_or_sell()
 
         self.assertEqual(trade.sell.call_count, 2)
 
-       
 
 if __name__ == '__main__':
     unittest.main()

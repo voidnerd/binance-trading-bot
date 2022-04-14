@@ -20,7 +20,7 @@ class Trade:
         self.close = 0
         self.buy_price = 0
         self.last_rsi = 0
-        self.bail_out_at = 0.1
+        self.bail_out_at = 0.02
         self.at_loss = False
         self.BOUGHT = False
         self.SOLD = True
@@ -44,11 +44,11 @@ class Trade:
             if x["filterType"] == "LOT_SIZE":
                 self.minQty = float(x["minQty"])
                 self.maxQty = float(x["maxQty"])
-                self.stepSize= x["stepSize"]
+                self.stepSize = x["stepSize"]
         if qty < self.minQty:
             qty = self.minQty
         return self.floor_step_size(qty)
-    
+
     def get_quantity(self, asset):
         balance = self.get_balance(asset=asset)
         quantity = self.get_round_step_quantity(float(balance))
@@ -85,20 +85,25 @@ class Trade:
                 self.SOLD = True
                 self.BOUGHT = False
         except Exception as e:
-            print("Error placing order - price: {} - rsi: {}".format(self.close, self.last_rsi))
+            print(
+                "Error placing order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             print(e)
             return False
         return True
 
     def should_buy(self) -> bool:
-        if self.at_loss and self.last_rsi > Trade.RSI_OVERSOLD:
-            return True
+        if self.at_loss:
+            return False
         if(self.last_rsi < Trade.RSI_OVERSOLD and not self.BOUGHT):
-           return True
+            return True
         else:
             return False
 
     def should_sell(self) -> bool:
+        if self.at_loss:
+            if self.last_rsi >= Trade.RSI_OVERBOUGHT:
+                self.at_loss = False
+            return False
         if self.shouldStopLoss():
             self.at_loss = True
             return True
@@ -116,10 +121,12 @@ class Trade:
 
     def buy_or_sell(self) -> None:
         if self.should_buy():
-            print("Placing buy order - price: {} - rsi: {}".format(self.close, self.last_rsi))
+            print(
+                "Placing buy order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             self.order(SIDE_BUY)
         if self.should_sell():
-            print("Placing sell order - price: {} - rsi: {}".format(self.close, self.last_rsi))
+            print(
+                "Placing sell order - price: {} - rsi: {}".format(self.close, self.last_rsi))
             self.order(SIDE_SELL)
 
     def handle_socket_message(self, msg) -> None:
@@ -135,7 +142,8 @@ class Trade:
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
                 self.buy_or_sell()
-                print("RSI - {} -- TIME - {}".format(self.last_rsi, datetime.now().strftime('%H:%M:%S')))
+                print("RSI - {} -- TIME - {}".format(self.last_rsi,
+                      datetime.now().strftime('%H:%M:%S')))
 
 
 # Start The Trade
