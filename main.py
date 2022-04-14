@@ -115,6 +115,7 @@ class Trade:
     def shouldStopLoss(self) -> bool:
         stop_loss_price = self.buy_price - (self.buy_price * self.bail_out_at)
         if(self.close <= stop_loss_price):
+            print("At Loss -- BUY PRICE - {}".format(self.buy_price))
             return True
         else:
             return False
@@ -142,7 +143,7 @@ class Trade:
                 rsi = talib.RSI(np_closes, Trade.RSI_PERIOD)
                 self.last_rsi = rsi[-1]
                 self.buy_or_sell()
-                print("RSI - {} -- TIME - {}".format(self.last_rsi,
+                print("PRICE - {} -- RSI - {} -- TIME - {}".format(self.close, self.last_rsi,
                       datetime.now().strftime('%H:%M:%S')))
 
 
